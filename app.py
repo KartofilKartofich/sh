@@ -394,6 +394,8 @@ if "available_user_ids" not in ss:
 
 if "no_more_cart_cleaning" not in st.session_state:
     st.session_state.no_more_cart_cleaning = False
+if "no_more_stock_updating" not in st.session_state:
+    st.session_state.no_more_stock_updating = False
 
 # ------------------------------------------------------------------
 # 3. Конфигурация страницы
@@ -420,6 +422,25 @@ def assign_unique_user_id():
 
 
 # ------------------------------------------------------------------
+dev_mode = st.query_params.get("dev_mode", "")
+if dev_mode == st.secrets("DEV_MODE"):
+   dev_mode = 1
+else:
+   dev_mode = 0
+
+if dev_mode == 1:
+   cart_upd_str = st.query_params.get("cart_upd", "")
+
+   if st.session_state.no_more_stock_updating == False and cart_upd_str != "":
+      for item in cart_upd_str.split(";"):
+         if not item:
+            continue
+         p_id,delta_qty = item.split(",")
+         if p_id in ss.stock:
+            ss.stock[p_id] = ss.stock.get(p_id, 0) + delta_qty # delta > 0 или delta < 0
+      st.session_state.no_more_stock_updating = True   
+   
+
 if "user_id" not in st.session_state:
     u_id = st.query_params.get("id", "")
 
@@ -595,9 +616,9 @@ with tab_products:
     st.title("🛍 Товары")
     st.write(f"Ваш ID: **{st.session_state.user_id}**")
     # Фильтры
-    selected_category = st.selectbox("Категория", categories, index=0, label_visibility="collapsed")
-    selected_country = st.selectbox("Страна производства", countries, index=0, label_visibility="collapsed")
-    selected_brand = st.selectbox("Бренд", brands, index=0, label_visibility="collapsed")
+    selected_category = st.selectbox("Категория", categories, index=0, label_visibility="visible")
+    selected_country = st.selectbox("Страна производства", countries, index=0, label_visibility="visible")
+    selected_brand = st.selectbox("Бренд", brands, index=0, label_visibility="visible")
     
     # Фильтрация
     display_products = products
@@ -811,8 +832,9 @@ with tab_products:
 # ------------------------------------------------------------------
 with tab_cart:
     st.title("🛒 Корзина")
-    st.write(ss.users)
-    st.write(ss.stock)
+    if dev_mode == 1:
+       st.write(ss.users)
+       st.write(ss.stock)
     #cart_usd, cart_hearts, cart_water = split_cart_by_currency()
     user_cart = ss.users[st.session_state.user_id]["cart"]
     
@@ -867,6 +889,13 @@ with tab_cart:
                     counter += 1
                     if int(base) in conditions['included_items']:
                         fulfilled += 1
+                if 'expiration_day' in conditions:
+                    counter += 1
+                    cur_time = datetime.utcnow() + timedelta(hours=st.secrets['hours'])
+                    cur_day = cur_time.date()
+                    last_day = datetime.strptime(conditions['expiration_day'], "%Y-%m-%d ")
+                    if cur_day <= last_day:
+                        fulfilled += 1               
 
                 if counter == fulfilled:
                     st.write("Промокод применён")
@@ -925,7 +954,7 @@ with tab_cart:
                         if ss.stock.get(pid_inner,0) <= 0:
                             st.toast("Больше добавить не получится, нет столько товаров")
                             return
-                        elif ss.users[user_id]["cart"][pid_inner] + 1 > max_items_per_one_order:
+                        elif ss.users[st.session_state.user_id]["cart"][pid_inner] + 1 > max_items_per_one_order:
                             st.toast(f"🤫 *в одном заказе может быть не более {max_items_per_one_order} таких товаров*")
                             return
                         
@@ -1157,6 +1186,8 @@ with tab_cart:
             else:
                 delivery = False
                 st.warning("Нет доставки на выбранный адрес. Выберите другую службу доставки")
+        else:
+           delivery = True
         
         if st.button("Перейти к оплате"):
             # Обновление времени входа (для предотвращения повторной очистки)
