@@ -423,7 +423,7 @@ def assign_unique_user_id():
 
 # ------------------------------------------------------------------
 dev_mode = st.query_params.get("dev_mode", "")
-if dev_mode == st.secrets("DEV_MODE"):
+if dev_mode == st.secrets["DEV_MODE"]:
    dev_mode = 1
 else:
    dev_mode = 0
