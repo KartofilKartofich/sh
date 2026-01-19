@@ -432,13 +432,15 @@ if dev_mode == 1:
    cart_upd_str = st.query_params.get("cart_upd", "")
 
    if st.session_state.no_more_stock_updating == False and cart_upd_str != "":
-      for item in cart_upd_str.split(";"):
-         if not item:
-            continue
-         p_id,delta_qty = item.split(",")
-         if p_id in ss.stock:
-            ss.stock[p_id] = ss.stock.get(p_id, 0) + delta_qty # delta > 0 или delta < 0
-      st.session_state.no_more_stock_updating = True   
+        for item in cart_upd_str.split(";"):
+            if not item:
+                continue
+            p_id,delta_qty = item.split(",")
+            if p_id in ss.stock:
+                ss.stock[p_id] = ss.stock.get(p_id, 0) + int(delta_qty) # delta > 0 или delta < 0
+                st.write(f"Обновили кол-во товара {p_id} на {delta_qty}")
+        st.session_state.no_more_stock_updating = True
+
    
 
 if "user_id" not in st.session_state:
@@ -453,7 +455,7 @@ if "user_id" not in st.session_state:
 
 # Инициализация данных пользователя, если его ещё нет
 if st.session_state.user_id not in ss.users:
-    st.write("initialization")
+    # st.write("initialization")
     ss.users[st.session_state.user_id] = {
         "cart": {str(p["id"]): 0 for p in products},
         "login_time": datetime.utcnow()
@@ -467,7 +469,7 @@ if "show_address" not in st.session_state:
     st.session_state.show_address = False
 
 if "preferred_cur" not in st.session_state:
-    st.session_state.preferred_cur = "UNI"
+    st.session_state.preferred_cur = f'UNI, {st.secrets.cur["UNI"]["forms"][4]}'#"UNI"
 
 logo_name = st.secrets['logo_name']
 
@@ -479,14 +481,14 @@ st.image(im_bytes,
 
 
 #Показывать цены в
-#every_cur = [f'{i}, {st.secrets.cur[i]["forms"][4]}' for i in RATES.keys()]
-every_cur = [i for i in RATES.keys()]
+every_cur = [f'{i}, {st.secrets.cur[i]["forms"][4]}' for i in RATES.keys()]
+#every_cur = [i for i in RATES.keys()]
 
 _, col2 = st.columns([0.7, 0.3])
 
 with col2:
     st.session_state.preferred_cur = st.selectbox(
-                        "Показывать международные цены в :",
+                        "Показывать международные цены в валюте :",
                         every_cur,
                     )
 
@@ -670,33 +672,35 @@ with tab_products:
                 # currency_type = get_currency_type(str(p["id"]))
                 # if currency_type == 1:
                     # p["price"] — словарь {USD:…, RUB:…}
-                mul = convert_currency2(p["price"]["MUL"], p["price"]["MUL_cur"], st.session_state.preferred_cur) #p["price"]["MUL"]
+                mul = convert_currency2(p["price"]["MUL"], p["price"]["MUL_cur"], st.session_state.preferred_cur[0:3]) #p["price"]["MUL"]
                 #mul_cur = p["price"]["MUL_cur"] # of seller
-                mul_cur = st.session_state.preferred_cur
+                mul_cur = st.session_state.preferred_cur[0:3]
                 nik = p["price"]["NSN"]
                 bon = p["price"]["BON"]
                 nik_cur = "NSN"
                 bon_cur = "BON"
                 if p["sale_coef"]["MUL"] != 1:
-                    mul_sale = p["sale_coef"]["MUL"] * mul
+                    mul_sale = f'**{p["sale_coef"]["MUL"] * mul}**'
                     mul = f"~{mul}~ "
                 else:
                     mul_sale = ""
 
                 if p["sale_coef"]["NSN"] != 1:
-                    nik_sale = p["sale_coef"]["NSN"] * nik
+                    nik_sale = f'**{math.ceil(p["sale_coef"]["NSN"] * nik)}**'
                     nik = f"~{nik}~ "
                 else:
                     nik_sale = ""
 
                 if p["sale_coef"]["BON"] != 1:
-                    bon_sale = p["sale_coef"]["BON"] * bon
+                    bon_sale = f'**{math.ceil(p["sale_coef"]["BON"] * bon)}**'
                     bon = f"~{bon}~ "
                 else:
                     bon_sale = ""
                         
 
-                st.write(f"💲 {mul}{mul_sale} {mul_cur} / {nik}{nik_sale} {nik_cur} / {bon}{bon_sale} {bon_cur}")
+                st.badge(f"🏷️ {mul} {mul_sale} **{mul_cur}** / {nik} {nik_sale} **{nik_cur}**  /  {bon} {bon_sale} **{bon_cur}** ",
+                         color="primary"
+                         )
                 # elif currency_type == 2:
                 #     st.write(f"❤️ {p['price']} шт.")
                 # elif currency_type == 3:
@@ -704,8 +708,10 @@ with tab_products:
                 
                 # Кнопки «подробнее»
                 def make_dialog(prod):
-                    @st.dialog(f"Подробнее о {prod['name']}")
+                    #@st.dialog(f"Подробнее о {prod['name']}")
+                    @st.dialog(f"\n{prod['name']}")
                     def _dialog():
+                        #st.title(f"\n{prod['name']}")
                         small_imgs = []
                         big_imgs = []
 
@@ -751,33 +757,36 @@ with tab_products:
                         st.write(f"🌍 **Страна:** {prod['country']}")
                         st.write(f"🏷 **Бренд:** {prod['brand']}")
                         
-                        mul = convert_currency2(p["price"]["MUL"], p["price"]["MUL_cur"], st.session_state.preferred_cur) #p["price"]["MUL"]
+                        mul = convert_currency2(p["price"]["MUL"], p["price"]["MUL_cur"], st.session_state.preferred_cur[0:3]) #p["price"]["MUL"]
                         #mul_cur = p["price"]["MUL_cur"] # of seller
-                        mul_cur = st.session_state.preferred_cur
+                        mul_cur = st.session_state.preferred_cur[0:3]
                         nik = p["price"]["NSN"]
                         bon = p["price"]["BON"]
                         nik_cur = "NSN"
                         bon_cur = "BON"
                         if p["sale_coef"]["MUL"] != 1:
-                            mul_sale = p["sale_coef"]["MUL"] * mul
+                            mul_sale = f'**{p["sale_coef"]["MUL"] * mul}**'
                             mul = f"~{mul}~ "
                         else:
                             mul_sale = ""
 
                         if p["sale_coef"]["NSN"] != 1:
-                            nik_sale = p["sale_coef"]["NSN"] * nik
+                            nik_sale = f'**{math.ceil(p["sale_coef"]["NSN"] * nik)}**'
                             nik = f"~{nik}~ "
                         else:
                             nik_sale = ""
 
                         if p["sale_coef"]["BON"] != 1:
-                            bon_sale = p["sale_coef"]["BON"] * bon
+                            bon_sale = f'**{math.ceil(p["sale_coef"]["BON"] * bon)}**'
                             bon = f"~{bon}~ "
                         else:
                             bon_sale = ""
 
-                        # st.write(f"💲 {mul} {mul_cur} / {nik} {nik_cur} / {bon} {bon_cur}")
-                        st.write(f"💲 {mul}{mul_sale} {mul_cur} / {nik}{nik_sale} {nik_cur} / {bon}{bon_sale} {bon_cur}")
+                        # st.write(f"🏷️ {mul} {mul_cur} / {nik} {nik_cur} / {bon} {bon_cur}")
+                        #st.badge(f"🏷️ {mul}{mul_sale} {mul_cur} / {nik}{nik_sale} {nik_cur} / {bon}{bon_sale} {bon_cur}")
+                        st.badge(f"🏷️ {mul} {mul_sale} **{mul_cur}** / {nik} {nik_sale} **{nik_cur}**  /  {bon} {bon_sale} **{bon_cur}** ",
+                         color="primary"
+                         )
                         # elif ctype == 2:
                         #     st.write(f"❤️ **Цена:** {prod['price']} шт.")
                         # else:
@@ -848,9 +857,10 @@ with tab_cart:
     def display_cart_part(cart, cur, conditions, extra_sale_coef):
         if not cart:
             return None, 0
-        st.subheader(f"Корзина для оплаты {cur}")
+        st.subheader(f"Выбранные товары")
+        st.markdown("---")
 
-        st.write(extra_sale_coef)
+        # st.write(extra_sale_coef)
         total_part = 0
         for pid, qty in cart.items():
             if qty == 0:
@@ -893,20 +903,20 @@ with tab_cart:
                     counter += 1
                     cur_time = datetime.utcnow() + timedelta(hours=st.secrets['hours'])
                     cur_day = cur_time.date()
-                    last_day = datetime.strptime(conditions['expiration_day'], "%Y-%m-%d ")
+                    last_day = datetime.strptime(conditions['expiration_day'], "%Y-%m-%d").date()
                     if cur_day <= last_day:
                         fulfilled += 1               
 
                 if counter == fulfilled:
-                    st.write("Промокод применён")
+                    st.success("Промокод применён к данному товару")
                     extra_sale_for_item = extra_sale_coef
                 else:
-                    st.write(f"Выполнено {fulfilled}/{counter} условий")
+                    st.warning(f"Промокод не действует на данный товар. Выполнено {fulfilled}/{counter} условий промокода")
                     extra_sale_for_item = {'MUL': 1, 'NSN': 1, 'BON': 1}
             else:
                 # Не введён промокод
                 extra_sale_for_item = {'MUL': 1, 'NSN': 1, 'BON': 1}
-            st.write(extra_sale_for_item)
+            #st.write(extra_sale_for_item)
 
             #ctype = get_currency_type(prod["id"])
             #if ctype == 1:
@@ -973,11 +983,18 @@ with tab_cart:
         return total_part
 
     # --- вызовы ---
-    cur = st.radio(
-                "Выберите валюту:",
-                [st.session_state.preferred_cur, "NSN", "BON"],
+    cur_ = st.radio(
+                "Выберите валюту оплаты* :",
+                [
+                 st.session_state.preferred_cur,
+                 #f'{st.session_state.preferred_cur}, {st.secrets.cur[st.session_state.preferred_cur]["forms"][4]}',
+                 f'NSN, {st.secrets.cur["NSN"]["forms"][4]}', 
+                 f'BON, {st.secrets.cur["BON"]["forms"][4]}'
+                 ],
                 key="currency_choice"
             )
+    cur = cur_[0:3]
+    st.caption("\*Если вы имеете мультивалютную карту и хотите оплатить в другой валюте , то выберите нужную валюту в меню 'Показывать международные цены в валюте :', после этого валюта появится в списке.")
     
      #Промокод:
     st.session_state.word = st.text_input("Есть промокод? Введите", value="", 
@@ -985,24 +1002,27 @@ with tab_cart:
                         #label_visibility="hidden"
                         )
     
+    conditions = None
+    extra_sale_coef = {'MUL': 1, 'NSN': 1, 'BON': 1}
     if st.session_state.word != "":
         for promo in promos:
             if st.session_state.word == promo["word"]:
-                st.write("Промокод существует")
-                for k, v in promo["conditions"].items():
-                    st.write(f"{k} === {v}")
-                    conditions = promo["conditions"]
-                    extra_sale_coef = promo["extra_sale_coef"]
+                st.success("Промокод существует")
+                st.info(f"Условия акции : {promo['desc']}")
+                #for k, v in promo["conditions"].items():
+                    # st.write(f"{k} === {v}")
+                conditions = promo["conditions"]
+                extra_sale_coef = promo["extra_sale_coef"]
     else:
-        conditions = None
-        extra_sale_coef = {'MUL': 1, 'NSN': 1, 'BON': 1}
+        pass
+        #extra_sale_coef = {'MUL': 1, 'NSN': 1, 'BON': 1}
 
 
     sum_total = display_cart_part(user_cart, cur, conditions, extra_sale_coef)
 
     if sum_total:
-        st.write(f"**Итого к оплате: {sum_total} {cur}**")
-
+        st.write(f"**ИТОГО К ОПЛАТЕ: {sum_total} {cur}**")
+        
     
     # ---------------------- Оформление ----------------------
     if st.button("Перейти к оформлению"):
@@ -1020,7 +1040,7 @@ with tab_cart:
                         placeholder=st.secrets["placeholder_name"],
                         #label_visibility="hidden"
                         )
-        st.write("Вы можете выбрать адрес , **нажав точку на карте**. Также вы можете заполнить адрес вручную , если вашего адреса нет на картах или вы хотите добавить деталей.")
+        st.write("Вы можете выбрать адрес , **нажав точку на карте** (карту можно листать влево-вправо). Также вы можете заполнить адрес вручную , если вашего адреса нет на картах или вы хотите добавить деталей.")
 
         # Выбор адреса
         addr()
@@ -1176,7 +1196,7 @@ with tab_cart:
                                 #key="card_type_radio",
                                 #on_change=on_change()
                                 )
-        st.write(selected_post)
+        #st.write(selected_post)
 
         post_serv = next(ps for ps in POST_SERVICES if str(ps["name"])==selected_post)
 
@@ -1193,6 +1213,7 @@ with tab_cart:
             # Обновление времени входа (для предотвращения повторной очистки)
             ss.users[st.session_state.user_id]["login_time"] = datetime.utcnow()
             
+
             endpoint = st.secrets["endpoint"]
 
             if len(st.session_state.name) > 1:
@@ -1207,7 +1228,15 @@ with tab_cart:
                 
                         # ---------------------- Оплата ----------------------
                         st.markdown("### Оплата корзины")
+                        
+                        accepted_methods_im_name = "1"
 
+                        im_bytes_accepted = l_1(accepted_methods_im_name, f"{accepted_methods_im_name}.txt")
+
+                        st.image(im_bytes_accepted,  
+                                    caption="Принимаемые способы оплаты",
+                                    width=200)
+                        
                         if user_cart:
                             link = cart_link(user_cart, cur)
                             st.link_button("💳 К оплате", link)
@@ -1218,4 +1247,3 @@ with tab_cart:
             else: 
                 st.error("Заполните поле имени")
             
-
