@@ -649,14 +649,14 @@ with tab_products:
                 else:
                     st.image(generate_image(p["color"]), use_container_width=True)
                 
-                # Описание товара
-                with st.expander("ℹ Описание"):
-                    #st.write(p["desc"])
-                    st.write(f"🧪 Состав: {p['composition']}")
-                    st.write(f"🌍 Страна: {p['country']}")
-                    st.write(f"🏷 Бренд: {p['brand']}")
+                # # Описание товара
+                # with st.expander("ℹ Описание"):
+                #     #st.write(p["desc"])
+                #     st.write(f"🧪 Состав: {p['composition']}")
+                #     st.write(f"🌍 Страна: {p['country']}")
+                #     st.write(f"🏷 Бренд: {p['brand']}")
                 
-                st.write(f"**{p['name']}**")
+                # st.write(f"**{p['name']}**")
                 # Цена
                 # Первая цифра ID определяет валюту
                 # currency_type = get_currency_type(str(p["id"]))
@@ -697,14 +697,18 @@ with tab_products:
                 else:
                     bon_sale = ""
                         
-
                 st.badge(f"🏷️ {mul} {mul_sale} **{mul_cur}** / {nik} {nik_sale} **{nik_cur}**  /  {bon} {bon_sale} **{bon_cur}** ",
-                         color="primary"
+                         color="violet"#"primary"
                          )
-                # elif currency_type == 2:
-                #     st.write(f"❤️ {p['price']} шт.")
-                # elif currency_type == 3:
-                #     st.write(f"💧 {p['price']} л.")
+                st.write(f"**{p['name']}**")
+
+                # Описание товара
+                with st.expander("ℹ &nbsp; Характеристики товара"):
+                    #st.write(p["desc"])
+                    st.write(f"🧪 Состав: {p['composition']}")
+                    st.write(f"🌍 Страна: {p['country']}")
+                    st.write(f"🏷 Бренд: {p['brand']}")
+                
                 
                 # Кнопки «подробнее»
                 def make_dialog(prod):
@@ -785,7 +789,7 @@ with tab_products:
                         # st.write(f"🏷️ {mul} {mul_cur} / {nik} {nik_cur} / {bon} {bon_cur}")
                         #st.badge(f"🏷️ {mul}{mul_sale} {mul_cur} / {nik}{nik_sale} {nik_cur} / {bon}{bon_sale} {bon_cur}")
                         st.badge(f"🏷️ {mul} {mul_sale} **{mul_cur}** / {nik} {nik_sale} **{nik_cur}**  /  {bon} {bon_sale} **{bon_cur}** ",
-                         color="primary"
+                         color="violet"#"primary"
                          )
                         # elif ctype == 2:
                         #     st.write(f"❤️ **Цена:** {prod['price']} шт.")
@@ -793,7 +797,8 @@ with tab_products:
                         #     st.write(f"💧 **Цена:** {prod['price']} л.")
                     return _dialog
                 
-                if st.button("Подробнее", key=f"details_{p['id']}"):
+                if st.button("Подробнее", key=f"details_{p['id']}", 
+                             width="stretch"):
                     make_dialog(p)()
                 
                 # Кнопки «Купить»
@@ -809,6 +814,8 @@ with tab_products:
                         disabled=btn_disabled_paper,
                         on_click=buy_callback,
                         args=(str(p["id"]), "paper"),
+                        type="primary", 
+                        width="stretch"
                     )
                     
                     # Электронная версия
@@ -822,6 +829,8 @@ with tab_products:
                         disabled=btn_disabled_e,
                         on_click=buy_callback,
                         args=(str(p["id"]), "e"),
+                        type="primary", 
+                        width="stretch"
                     )
                 else:
                     key = str(p["id"])
@@ -834,7 +843,12 @@ with tab_products:
                         disabled=btn_disabled,
                         on_click=buy_callback,
                         args=(key, None),
+                        type="primary", 
+                        width="stretch"
                     )
+                st.write("")
+                st.write("")
+                st.write("")
 
 # ------------------------------------------------------------------
 # 12. Вкладка «Корзина»
@@ -941,21 +955,28 @@ with tab_cart:
             line_total = unit_price * qty
             total_part += line_total
 
-            col_name, col_minus, col_qty, col_plus = st.columns([3,0.7,0.6,0.7])
-            with col_name:
-                st.write(f"{name} — {unit_price} {sym}")
-            with col_minus:
+            # col_name, col_minus, col_qty, col_plus = st.columns([3,0.7,0.6,0.7])
+            # with col_name:
+            st.write(f"{name} — {unit_price} {sym}")
+
+            with st.container(horizontal=True, 
+                              vertical_alignment="bottom", 
+                              #border=True,
+                              horizontal_alignment="left",
+                              width=500):
+            # with col_minus:
                 def dec(pid_inner=pid):
                     if ss.users[st.session_state.user_id]["cart"][pid_inner] > 0:
                         ss.users[st.session_state.user_id]["cart"][pid_inner] -= 1
                         ss.stock[pid_inner] = ss.stock.get(pid_inner,0) + 1
                         ss.users[st.session_state.user_id]["login_time"] = datetime.utcnow()
                         #st.experimental_rerun()
-                st.button("➖", key=f"dec_{pid}", on_click=dec)
-            with col_qty:
+                st.button("➖", key=f"dec_{pid}", on_click=dec, width=50)
+            # with col_qty:
                 st.text_input("", value=str(ss.users[st.session_state.user_id]["cart"][pid]),
-                            key=f"qty_{pid}", disabled=True, label_visibility="collapsed")
-            with col_plus:
+                            key=f"qty_{pid}", disabled=True, label_visibility="collapsed",
+                            width=50)
+            # with col_plus:
                 if not pid.startswith("ticket_"):
                     def inc(pid_inner=pid):
                         prod = next(p for p in products if str(p["id"])==pid_inner)
@@ -972,7 +993,7 @@ with tab_cart:
                         ss.users[st.session_state.user_id]["cart"][pid_inner] += 1
                         ss.users[st.session_state.user_id]["login_time"] = datetime.utcnow()
                         #st.experimental_rerun()
-                    st.button("➕", key=f"inc_{pid}", on_click=inc)
+                    st.button("➕", key=f"inc_{pid}", on_click=inc, width=50)
 
             if qty > 0:
                 st.write(f"**{qty}** × {unit_price} {sym} = **{line_total} {sym}**")
@@ -1001,6 +1022,7 @@ with tab_cart:
                         placeholder="ПРОМОКОД",
                         #label_visibility="hidden"
                         )
+    st.caption("Обратите внимание, что цены в NSN и BON после применения промокода округляются до целого числа вверх")
     
     conditions = None
     extra_sale_coef = {'MUL': 1, 'NSN': 1, 'BON': 1}
@@ -1170,6 +1192,8 @@ with tab_cart:
             if 'address_floor' in locals():
                 if address_floor.isdigit(): # != "" and address_extra != "":
                     fields.append(address_floor + " этаж")
+                else: 
+                    fields.append(address_floor)
 
 
         for i in fields:
