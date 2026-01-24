@@ -941,7 +941,8 @@ with tab_cart:
                                                cur)
                 sym = cur
             else:
-                unit_price = math.ceil(extra_sale_for_item[cur] * prod["sale_coef"][cur] * prod["price"][cur])
+                #unit_price = math.ceil(extra_sale_for_item[cur] * prod["sale_coef"][cur] * prod["price"][cur])
+                unit_price = extra_sale_for_item[cur] * prod["sale_coef"][cur] * prod["price"][cur]
                 sym = cur
 
             unit_price = round(unit_price, 2)
@@ -999,7 +1000,10 @@ with tab_cart:
                 st.write(f"**{qty}** × {unit_price} {sym} = **{line_total} {sym}**")
                 st.markdown("---")
 
-        total_part = round(total_part, 2)
+        if cur != "NSN" and cur != "BON":
+            total_part = round(total_part, 2)
+        else: 
+            total_part = math.ceil(total_part)
 
         return total_part
 
@@ -1263,7 +1267,7 @@ with tab_cart:
                         
                         if user_cart:
                             link = cart_link(user_cart, cur)
-                            st.link_button("💳 К оплате", link)
+                            st.link_button("💳 Оплатить", link)
                     else: 
                         st.error("Нет доставки на выбранный адрес. Выберите другую службу доставки")
                 else: 
