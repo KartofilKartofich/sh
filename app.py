@@ -680,7 +680,7 @@ with tab_products:
                 nik_cur = "NSN"
                 bon_cur = "BON"
                 if p["sale_coef"]["MUL"] != 1:
-                    mul_sale = f'**{p["sale_coef"]["MUL"] * mul}**'
+                    mul_sale = f'**{round(p["sale_coef"]["MUL"] * mul, 2)}**'
                     mul = f"~{mul}~ "
                 else:
                     mul_sale = ""
@@ -769,7 +769,7 @@ with tab_products:
                         nik_cur = "NSN"
                         bon_cur = "BON"
                         if p["sale_coef"]["MUL"] != 1:
-                            mul_sale = f'**{p["sale_coef"]["MUL"] * mul}**'
+                            mul_sale = f'**{round(p["sale_coef"]["MUL"] * mul, 2)}**'
                             mul = f"~{mul}~ "
                         else:
                             mul_sale = ""
