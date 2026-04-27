@@ -1022,7 +1022,8 @@ with tab_cart:
                             width=50)
             # with col_plus:
                 if not pid.startswith("ticket_"):
-                    def inc(pid_inner=pid):
+                    base, vtype = pid.split("_")
+                    def inc(pid_inner=base):
                         prod = next(p for p in products if str(p["id"])==pid_inner)
                         max_items_per_one_order = prod['max_items']
 
