@@ -380,6 +380,9 @@ if "stock" not in ss:
         elif p["category"] == "Книги":  # книга
             ss.stock[f"{pid}_paper"] = p.get("stock_paper", 0)
             ss.stock[f"{pid}_e"] = p.get("stock_e", 0)
+        elif p["category"] == "Аудиокниги":  # книга
+            ss.stock[f"{pid}_opta"] = p.get("stock_opta", 0)
+            ss.stock[f"{pid}_optb"] = p.get("stock_optb", 0)
 
 if "seats" not in ss:
     ss.seats = {}  # {time_str: {"1-1": True/False, ...}}
@@ -464,6 +467,9 @@ if st.session_state.user_id not in ss.users:
         if p["category"] == "Книги":
             ss.users[st.session_state.user_id]["cart"][f"{p['id']}_paper"] = 0
             ss.users[st.session_state.user_id]["cart"][f"{p['id']}_e"] = 0
+        if p["category"] == "Аудиокниги":
+            ss.users[st.session_state.user_id]["cart"][f"{p['id']}_opta"] = 0
+            ss.users[st.session_state.user_id]["cart"][f"{p['id']}_optb"] = 0
 
 if "show_address" not in st.session_state:
     st.session_state.show_address = False
@@ -832,6 +838,38 @@ with tab_products:
                         type="primary", 
                         width="stretch"
                     )
+
+                elif p["category"] == "Аудиокниги":
+                    # версия a
+                    key_opta = f"{p['id']}_opta"
+                    avail_opta = ss.stock.get(key_opta, 0)
+                    btn_text_opta = "Купить версию БЕЗ рекламы" if avail_opta > 0 else "БЕЗ рекламы разобрали"
+                    btn_disabled_opta = avail_opta <= 0 and avail_opta != 0.5
+                    st.button(
+                        btn_text_opta,
+                        key=f"buy_{key_opta}",
+                        disabled=btn_disabled_opta,
+                        on_click=buy_callback,
+                        args=(str(p["id"]), "opta"),
+                        type="primary", 
+                        width="stretch"
+                    )
+                    
+                    # версия b
+                    key_optb = f"{p['id']}_optb"
+                    avail_optb = ss.stock.get(key_optb, 0)
+                    btn_text_optb = "Купить версию С рекламой" if avail_optb > 0 else "С рекламой разобрали"
+                    btn_disabled_optb = avail_optb <= 0 and avail_optb != 0.5
+                    st.button(
+                        btn_text_optb,
+                        key=f"buy_{key_optb}",
+                        disabled=btn_disabled_optb,
+                        on_click=buy_callback,
+                        args=(str(p["id"]), "optb"),
+                        type="primary", 
+                        width="stretch"
+                    )
+
                 else:
                     key = str(p["id"])
                     avail = ss.stock.get(key, 0)
@@ -884,6 +922,11 @@ with tab_cart:
                 base, vtype = pid.split("_")
                 prod = next(p for p in products if str(p["id"])==base)
                 name = f"{prod['name']} ({'бумажная' if vtype=='paper' else 'электронная'})"
+                brand = prod['brand']
+            elif "_opta" in pid or "_optb" in pid:
+                base, vtype = pid.split("_")
+                prod = next(p for p in products if str(p["id"])==base)
+                name = f"{prod['name']} ({'без рекламы' if vtype=='opta' else 'с рекламой'})"
                 brand = prod['brand']
             else:
                 base = pid
