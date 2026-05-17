@@ -1022,10 +1022,14 @@ with tab_cart:
                             width=50)
             # with col_plus:
                 if not pid.startswith("ticket_"):
-                    base, vtype = pid.split("_")
-                    def inc(pid_inner=base):
-                        prod = next(p for p in products if str(p["id"])==pid_inner)
-                        max_items_per_one_order = prod['max_items']
+                    #base, vtype = pid.split("_")
+
+                    def inc(pid_inner=pid):
+                        base = pid_inner.split("_")[0]
+
+                        prod_inner = next(p for p in products if str(p["id"])==base)
+                        max_items_per_one_order = prod_inner['max_items']
+                        #st.toast(prod_inner)
 
                         if ss.stock.get(pid_inner,0) <= 0:
                             st.toast("Больше добавить не получится, нет столько товаров")
